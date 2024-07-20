@@ -25,7 +25,7 @@ jobs:
           USER=${{ secrets.EC2_USER }}
 
           # Criar o diretório na máquina remota se não existir
-          ssh -t -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
+          ssh -t -o StrictHostKeyChecking=no $USER@$HOST << "EOF"
             mkdir -p /home/$USER/app
           EOF
 
@@ -33,16 +33,17 @@ jobs:
           scp -o StrictHostKeyChecking=no -r ./* $USER@$HOST:/home/$USER/app/
 
           # Conectar via SSH para construir e iniciar os containers Docker
-          ssh -t -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
+          ssh -t -o StrictHostKeyChecking=no $USER@$HOST << "EOF"
             set -e
 
             start_container() {
               local dir=\$1
               local name=\$2
+              local options=\$3
 
               cd /home/$USER/app/\$dir
               docker build -t \$name .
-              docker run -d --name \$name \$3 \$name
+              docker run -d --name \$name \$options \$name
 
               # Aguardar o container iniciar
               while [ \$(docker inspect -f '{{.State.Running}}' \$name) != "true" ]; do
@@ -51,7 +52,7 @@ jobs:
             }
 
             # Iniciar os containers em ordem
-            start_container "zookeeper" "zookeeper"
+            start_container "zookeeper" "zookeeper" ""
             start_container "eureka" "eureka" "--link zookeeper:zookeeper"
             start_container "micro-producer" "micro-producer" "--link eureka:eureka"
             start_container "micro-consumer" "micro-consumer" "--link micro-producer:micro-producer"
