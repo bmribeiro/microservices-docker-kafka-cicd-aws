@@ -42,18 +42,41 @@ jobs:
 
             echo "Iniciando o script de containers Docker..."
 
-            # Construir e iniciar o container zookeeper
-            echo "Construindo e iniciando o container zookeeper..."
-            cd /home/$USER/app/zookeeper
+            # Construir e iniciar os containers com docker-compose
+            echo "Iniciando containers com docker-compose..."
+            cd /home/$USER/app
             docker-compose up -d
 
-            # Aguardar o container zookeeper iniciar
-            echo "Aguardando o container zookeeper iniciar..."
-            while [ "$(docker inspect -f '{{.State.Running}}' zookeeper)" != "true" ]; do
-              echo "Container zookeeper ainda não está em execução. Aguardando..."
+            # Função para verificar se todos os containers fornecidos estão em execução
+            check_containers_running() {
+              local containers=("$@")
+              local all_running=true
+
+              for container in "${containers[@]}"; do
+                status=$(docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null)
+                if [ "$status" != "true" ]; then
+                  all_running=false
+                  echo "Container $container ainda não está em execução. Aguardando..."
+                fi
+              done
+
+              if [ "$all_running" = true ]; then
+                echo "Todos os containers estão em execução."
+              fi
+
+              return $all_running
+            }
+
+            # Aguardar o container zookeeper e kafka iniciarem
+            echo "Aguardando os containers zookeeper e kafka iniciarem..."
+            while ! check_containers_running zookeeper kafka; do
               sleep 1
             done
-            echo "Container zookeeper está em execução."
+
+            echo "Containers zookeeper e kafka estão em execução."
+
+            # Construir e iniciar os containers restantes
+            echo "Construindo e iniciando os containers restantes..."
 
             # Construir e iniciar o container eureka
             echo "Construindo e iniciando o container eureka..."
