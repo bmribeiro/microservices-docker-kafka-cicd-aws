@@ -42,7 +42,13 @@ jobs:
 
             echo "Iniciando o script de containers Docker..."
 
-            # Construir e iniciar os containers com docker-compose
+            # Certificar-se de que o docker-compose.yml está no diretório correto
+            echo "Verificando se o docker-compose.yml está presente..."
+            if [ ! -f /home/$USER/app/zookeeper/docker-compose.yml ]; then
+              echo "Arquivo docker-compose.yml não encontrado!"
+              exit 1
+            fi
+
             echo "Iniciando containers com docker-compose..."
             cd /home/$USER/app/zookeeper
             docker-compose up -d
@@ -62,14 +68,16 @@ jobs:
 
               if [ "$all_running" = true ]; then
                 echo "Todos os containers estão em execução."
+              else
+                echo "Alguns containers ainda não estão em execução."
               fi
 
-              return $all_running
+              return $([ "$all_running" = true ] && echo 0 || echo 1)
             }
 
-            # Aguardar o container zookeeper e kafka iniciarem
+            # Aguardar os containers zookeeper e kafka iniciarem
             echo "Aguardando os containers zookeeper e kafka iniciarem..."
-            while ! check_containers_running zookeeper kafka; do
+            until check_containers_running zookeeper kafka; do
               sleep 1
             done
 
