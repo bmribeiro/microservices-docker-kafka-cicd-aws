@@ -26,29 +26,39 @@ jobs:
 
           # Criar o diretório na máquina remota se não existir
           ssh -t -o StrictHostKeyChecking=no $USER@$HOST << "EOF"
+            echo "Criando diretório /home/$USER/app"
             mkdir -p /home/$USER/app
+            echo "Diretório criado."
           EOF
 
           # Upload arquivos para EC2
+          echo "Fazendo upload dos arquivos para EC2..."
           scp -o StrictHostKeyChecking=no -r ./* $USER@$HOST:/home/$USER/app/
+          echo "Upload concluído."
 
           # Conectar via SSH para construir e iniciar os containers Docker
           ssh -t -o StrictHostKeyChecking=no $USER@$HOST << "EOF"
             set -e
+
+            echo "Iniciando o script de containers Docker..."
 
             start_container() {
               local dir=\$1
               local name=\$2
               local options=\$3
 
+              echo "Construindo e iniciando o container \$name a partir do diretório \$dir"
               cd /home/$USER/app/\$dir
               docker build -t \$name .
               docker run -d --name \$name \$options \$name
 
               # Aguardar o container iniciar
+              echo "Aguardando o container \$name iniciar..."
               while [ \$(docker inspect -f '{{.State.Running}}' \$name) != "true" ]; do
+                echo "Container \$name ainda não está em execução. Aguardando..."
                 sleep 1
               done
+              echo "Container \$name está em execução."
             }
 
             # Iniciar os containers em ordem
@@ -57,4 +67,11 @@ jobs:
             start_container "micro-producer" "micro-producer" "--link eureka:eureka"
             start_container "micro-consumer" "micro-consumer" "--link micro-producer:micro-producer"
             start_container "api-gateway" "api-gateway" "--link micro-consumer:micro-consumer"
+
+            echo "Todos os containers foram iniciados com sucesso."
+
+            # Verificar status dos containers
+            echo "Verificando status dos containers..."
+            docker ps
+            echo "Verificação concluída."
           EOF
