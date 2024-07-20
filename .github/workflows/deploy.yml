@@ -98,6 +98,7 @@ jobs:
             # Construir e iniciar o container eureka
             echo "Construindo e iniciando o container eureka..."
             cd /home/$USER/app/eureka
+            mvn clean install
             docker build -t eureka .
             docker run -d --name eureka --link zookeeper:zookeeper eureka
 
@@ -112,6 +113,7 @@ jobs:
             # Construir e iniciar o container micro-producer
             echo "Construindo e iniciando o container micro-producer..."
             cd /home/$USER/app/micro-producer
+            mvn clean install
             docker build -t micro-producer .
             docker run -d --name micro-producer --link eureka:eureka micro-producer
 
@@ -126,6 +128,7 @@ jobs:
             # Construir e iniciar o container micro-consumer
             echo "Construindo e iniciando o container micro-consumer..."
             cd /home/$USER/app/micro-consumer
+            mvn clean install
             docker build -t micro-consumer .
             docker run -d --name micro-consumer --link micro-producer:micro-producer micro-consumer
 
@@ -140,6 +143,7 @@ jobs:
             # Construir e iniciar o container api-gateway
             echo "Construindo e iniciando o container api-gateway..."
             cd /home/$USER/app/api-gateway
+            mvn clean install
             docker build -t api-gateway .
             docker run -d --name api-gateway --link micro-consumer:micro-consumer api-gateway
 
