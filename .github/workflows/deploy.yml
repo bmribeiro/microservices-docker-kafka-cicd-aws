@@ -44,7 +44,7 @@ jobs:
 
             # Construir e iniciar os containers com docker-compose
             echo "Iniciando containers com docker-compose..."
-            cd /home/$USER/app
+            cd /home/$USER/app/zookeeper
             docker-compose up -d
 
             # Função para verificar se todos os containers fornecidos estão em execução
