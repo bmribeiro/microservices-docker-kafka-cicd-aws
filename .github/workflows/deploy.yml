@@ -1,0 +1,52 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Deploy to EC2
+        run: |
+          # Variáveis
+          HOST=${{ secrets.EC2_HOST }}
+          USER=${{ secrets.EC2_USER }}
+
+          # Upload arquivos para EC2
+          scp -o StrictHostKeyChecking=no -r ./* $USER@$HOST:/home/$USER/app/
+
+          # Conectar via SSH e executar comandos
+          ssh -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
+            cd /home/$USER/app
+
+            # Verificar se o Docker está instalado
+            if ! command -v docker &> /dev/null; then
+              echo "Docker não está instalado. Instalando..."
+              sudo yum update -y
+              sudo amazon-linux-extras install docker -y
+              sudo service docker start
+              sudo usermod -a -G docker $USER
+            fi
+
+            # Verificar se o Docker Compose está instalado
+            if ! command -v docker-compose &> /dev/null; then
+              echo "Docker Compose não está instalado. Instalando..."
+              sudo curl -L "https://github.com/docker/compose/releases/download/2.17.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose
+            fi
+
+            # Construir e iniciar Docker containers
+            docker-compose up --build -d
+          EOF
