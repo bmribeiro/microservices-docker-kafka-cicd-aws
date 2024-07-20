@@ -25,7 +25,7 @@ jobs:
           USER=${{ secrets.EC2_USER }}
 
           # Conectar via SSH e preparar o ambiente
-          ssh -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
+          ssh -t -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
             # Criar o diretório se não existir
             mkdir -p /home/$USER/app
           EOF
@@ -34,7 +34,7 @@ jobs:
           scp -o StrictHostKeyChecking=no -r ./* $USER@$HOST:/home/$USER/app/
 
           # Conectar via SSH e iniciar Docker containers
-          ssh -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
+          ssh -t -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
             cd /home/$USER/app
 
             # Construir e iniciar Docker containers
