@@ -45,8 +45,7 @@ jobs:
             # Construir e iniciar o container zookeeper
             echo "Construindo e iniciando o container zookeeper..."
             cd /home/$USER/app/zookeeper
-            docker build -t zookeeper .
-            docker run -d --name zookeeper zookeeper
+            docker-compose up -d
 
             # Aguardar o container zookeeper iniciar
             echo "Aguardando o container zookeeper iniciar..."
