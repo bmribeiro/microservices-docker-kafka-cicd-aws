@@ -42,6 +42,15 @@ jobs:
 
             echo "Iniciando o script de containers Docker..."
 
+            # Stop and remove all running containers
+            docker stop $(docker ps -q) || true
+            docker rm $(docker ps -a -q) || true
+
+            # Optionally, remove unused images
+            docker rmi $(docker images -q) || true
+
+            echo "Containers Eliminados."
+
             # Certificar-se de que o docker-compose.yml está no diretório correto
             echo "Verificando se o docker-compose.yml está presente..."
             if [ ! -f /home/$USER/app/zookeeper/docker-compose.yml ]; then
