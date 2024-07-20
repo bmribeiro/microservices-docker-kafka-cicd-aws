@@ -11,8 +11,8 @@
 	</parent>
 	<groupId>com.bmiguelr</groupId>
 	<artifactId>micro-producer</artifactId>
-	<version>0.0.1</version>
-	<packaging>war</packaging>
+	<version>0.0.2</version>
+	<packaging>jar</packaging>
 	<name>Micro Kafka Producer</name>
 	<description>Micro Kafka Producer</description>
 	<url />

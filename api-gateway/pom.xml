@@ -11,8 +11,8 @@
 	</parent>
 	<groupId>com.bmiguelr</groupId>
 	<artifactId>api-gateway</artifactId>
-	<version>0.0.1</version>
-	<packaging>war</packaging>
+	<version>0.0.2</version>
+	<packaging>jar</packaging>
 	<name>API Gateway</name>
 	<description>Micro Services</description>
 	<url />

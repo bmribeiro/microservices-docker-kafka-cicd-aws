@@ -1,0 +1,14 @@
+# Imagem JDK
+FROM alpine/java:21-jdk
+
+# Define o argumento JAR_FILE
+ARG JAR_FILE=target/*.jar
+
+# Copia o arquivo JAR para o contêiner com o nome app.jar
+COPY ${JAR_FILE} eureka.jar
+
+# Expõe a porta
+EXPOSE 8080
+
+# Define o comando de entrada para iniciar a aplicação
+ENTRYPOINT ["java","-jar","/eureka.jar"]

@@ -1,0 +1,74 @@
+name: Build Microservices
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-api-gateway:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v2
+        with:
+          java-version: '21'
+
+      - name: Build api-gateway
+        run: |
+          cd api-gateway
+          mvn clean install
+
+  build-eureka:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v2
+        with:
+          java-version: '21'
+
+      - name: Build eureka
+        run: |
+          cd eureka
+          mvn clean install
+
+  build-micro-consumer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v2
+        with:
+          java-version: '21'
+
+      - name: Build micro-consumer
+        run: |
+          cd micro-consumer
+          mvn clean install
+
+  build-micro-producer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v2
+        with:
+          java-version: '21'
+
+      - name: Build micro-producer
+        run: |
+          cd micro-producer
+          mvn clean install
