@@ -16,7 +16,7 @@ jobs:
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.5.3
         with:
-          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+          ssh-private-key: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
 
       - name: Deploy to EC2
         run: |
@@ -31,3 +31,29 @@ jobs:
 
           # Upload arquivos para EC2
           scp -o StrictHostKeyChecking=no -r ./* $USER@$HOST:/home/$USER/app/
+
+          # Conectar via SSH para construir e iniciar os containers Docker
+          ssh -t -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
+            set -e
+
+            start_container() {
+              local dir=\$1
+              local name=\$2
+
+              cd /home/$USER/app/\$dir
+              docker build -t \$name .
+              docker run -d --name \$name \$3 \$name
+
+              # Aguardar o container iniciar
+              while [ \$(docker inspect -f '{{.State.Running}}' \$name) != "true" ]; do
+                sleep 1
+              done
+            }
+
+            # Iniciar os containers em ordem
+            start_container "zookeeper" "zookeeper"
+            start_container "eureka" "eureka" "--link zookeeper:zookeeper"
+            start_container "micro-producer" "micro-producer" "--link eureka:eureka"
+            start_container "micro-consumer" "micro-consumer" "--link micro-producer:micro-producer"
+            start_container "api-gateway" "api-gateway" "--link micro-consumer:micro-consumer"
+          EOF
