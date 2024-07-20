@@ -25,7 +25,7 @@ jobs:
           USER=${{ secrets.EC2_USER }}
 
           # Criar o diretório na máquina remota se não existir
-          ssh -t -o StrictHostKeyChecking=no $USER@$HOST << "EOF"
+          ssh -t -o StrictHostKeyChecking=no $USER@$HOST << EOF
             echo "Criando diretório /home/$USER/app"
             mkdir -p /home/$USER/app
             echo "Diretório criado."
@@ -37,36 +37,80 @@ jobs:
           echo "Upload concluído."
 
           # Conectar via SSH para construir e iniciar os containers Docker
-          ssh -t -o StrictHostKeyChecking=no $USER@$HOST << "EOF"
+          ssh -t -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
             set -e
 
             echo "Iniciando o script de containers Docker..."
 
-            start_container() {
-              local dir=\$1
-              local name=\$2
-              local options=\$3
+            # Construir e iniciar o container zookeeper
+            echo "Construindo e iniciando o container zookeeper..."
+            cd /home/$USER/app/zookeeper
+            docker build -t zookeeper .
+            docker run -d --name zookeeper zookeeper
 
-              echo "Construindo e iniciando o container \$name a partir do diretório \$dir"
-              cd /home/$USER/app/\$dir
-              docker build -t \$name .
-              docker run -d --name \$name \$options \$name
+            # Aguardar o container zookeeper iniciar
+            echo "Aguardando o container zookeeper iniciar..."
+            while [ "$(docker inspect -f '{{.State.Running}}' zookeeper)" != "true" ]; do
+              echo "Container zookeeper ainda não está em execução. Aguardando..."
+              sleep 1
+            done
+            echo "Container zookeeper está em execução."
 
-              # Aguardar o container iniciar
-              echo "Aguardando o container \$name iniciar..."
-              while [ \$(docker inspect -f '{{.State.Running}}' \$name) != "true" ]; do
-                echo "Container \$name ainda não está em execução. Aguardando..."
-                sleep 1
-              done
-              echo "Container \$name está em execução."
-            }
+            # Construir e iniciar o container eureka
+            echo "Construindo e iniciando o container eureka..."
+            cd /home/$USER/app/eureka
+            docker build -t eureka .
+            docker run -d --name eureka --link zookeeper:zookeeper eureka
 
-            # Iniciar os containers em ordem
-            start_container "zookeeper" "zookeeper" ""
-            start_container "eureka" "eureka" "--link zookeeper:zookeeper"
-            start_container "micro-producer" "micro-producer" "--link eureka:eureka"
-            start_container "micro-consumer" "micro-consumer" "--link micro-producer:micro-producer"
-            start_container "api-gateway" "api-gateway" "--link micro-consumer:micro-consumer"
+            # Aguardar o container eureka iniciar
+            echo "Aguardando o container eureka iniciar..."
+            while [ "$(docker inspect -f '{{.State.Running}}' eureka)" != "true" ]; do
+              echo "Container eureka ainda não está em execução. Aguardando..."
+              sleep 1
+            done
+            echo "Container eureka está em execução."
+
+            # Construir e iniciar o container micro-producer
+            echo "Construindo e iniciando o container micro-producer..."
+            cd /home/$USER/app/micro-producer
+            docker build -t micro-producer .
+            docker run -d --name micro-producer --link eureka:eureka micro-producer
+
+            # Aguardar o container micro-producer iniciar
+            echo "Aguardando o container micro-producer iniciar..."
+            while [ "$(docker inspect -f '{{.State.Running}}' micro-producer)" != "true" ]; do
+              echo "Container micro-producer ainda não está em execução. Aguardando..."
+              sleep 1
+            done
+            echo "Container micro-producer está em execução."
+
+            # Construir e iniciar o container micro-consumer
+            echo "Construindo e iniciando o container micro-consumer..."
+            cd /home/$USER/app/micro-consumer
+            docker build -t micro-consumer .
+            docker run -d --name micro-consumer --link micro-producer:micro-producer micro-consumer
+
+            # Aguardar o container micro-consumer iniciar
+            echo "Aguardando o container micro-consumer iniciar..."
+            while [ "$(docker inspect -f '{{.State.Running}}' micro-consumer)" != "true" ]; do
+              echo "Container micro-consumer ainda não está em execução. Aguardando..."
+              sleep 1
+            done
+            echo "Container micro-consumer está em execução."
+
+            # Construir e iniciar o container api-gateway
+            echo "Construindo e iniciando o container api-gateway..."
+            cd /home/$USER/app/api-gateway
+            docker build -t api-gateway .
+            docker run -d --name api-gateway --link micro-consumer:micro-consumer api-gateway
+
+            # Aguardar o container api-gateway iniciar
+            echo "Aguardando o container api-gateway iniciar..."
+            while [ "$(docker inspect -f '{{.State.Running}}' api-gateway)" != "true" ]; do
+              echo "Container api-gateway ainda não está em execução. Aguardando..."
+              sleep 1
+            done
+            echo "Container api-gateway está em execução."
 
             echo "Todos os containers foram iniciados com sucesso."
 
